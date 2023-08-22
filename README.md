@@ -1,5 +1,3 @@
-# Alex Wu's Personal Project
-
 ## NBA Fantasy Draft Simulator 
 
 **Program Features:**
