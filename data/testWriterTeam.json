@@ -1,0 +1,10 @@
+{
+    "leagueName": "alex league",
+    "teams": [{
+        "teamName": "alex",
+        "roster": [
+            {"playerName": "Kyrie Irving"},
+            {"playerName": "Kevin Durant"}
+        ]
+    }]
+}

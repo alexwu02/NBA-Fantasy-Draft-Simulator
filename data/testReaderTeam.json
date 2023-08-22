@@ -1,0 +1,10 @@
+{
+  "leagueName": "alex league",
+  "teams": [{
+    "teamName": "peter",
+    "roster": [
+      {"playerName": "Trae Young"},
+      {"playerName": "Luka Doncic"}
+    ]
+  }]
+}

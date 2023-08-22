@@ -1,0 +1,13 @@
+{
+    "leagueName": "Alex's Fantasy League",
+    "teams": [
+        {
+            "teamName": "team1",
+            "roster": [{"playerName": "Joel Embiid"}]
+        },
+        {
+            "teamName": "team2",
+            "roster": [{"playerName": "Giannis Antetokounmpo"}]
+        }
+    ]
+}

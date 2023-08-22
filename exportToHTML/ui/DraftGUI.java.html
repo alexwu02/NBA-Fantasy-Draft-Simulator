@@ -1,0 +1,373 @@
+<html>
+<head>
+<title>DraftGUI.java</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6a8759;}
+.s3 { color: #808080;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+DraftGUI.java</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">ui</span><span class="s0">;</span>
+
+<span class="s0">import </span><span class="s1">model.DraftPool</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">model.League</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">model.Player</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">model.Team</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">persistence.JsonReader</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">persistence.JsonWriter</span><span class="s0">;</span>
+
+<span class="s0">import </span><span class="s1">javax.imageio.ImageIO</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">javax.swing.*</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">javax.swing.table.DefaultTableModel</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.awt.*</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.awt.event.MouseAdapter</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.io.FileNotFoundException</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.io.IOException</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.util.ArrayList</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.util.Comparator</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.util.Scanner</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">javax.swing.JOptionPane</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">javax.swing.JTable</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.awt.event.MouseEvent</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.net.URL</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.util.stream.Collectors</span><span class="s0">;</span>
+
+
+<span class="s0">public class </span><span class="s1">DraftGUI </span><span class="s0">extends </span><span class="s1">JFrame {</span>
+    <span class="s0">private static final </span><span class="s1">String JSON_STORE = </span><span class="s2">&quot;./data/league.json&quot;</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">League league = </span><span class="s0">new </span><span class="s1">League(</span><span class="s2">&quot;Alex's Fantasy League&quot;</span><span class="s1">)</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">JsonWriter jsonWriter</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">JsonReader jsonReader</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">JTable teamTable</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">DraftPool pool = </span><span class="s0">new </span><span class="s1">DraftPool()</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">JTable draftBoardTable</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">JTable teamRosterTable</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">JLabel currentTeamLabel</span><span class="s0">;</span>
+    <span class="s0">private int </span><span class="s1">currentTeamIndex</span><span class="s0">;</span>
+
+    <span class="s3">// EFFECTS: runs the DraftGUI application</span>
+    <span class="s0">public </span><span class="s1">DraftGUI() {</span>
+        <span class="s1">initGUI()</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// MODIFIES: this</span>
+    <span class="s3">// EFFECTS: conducts the entire draft process</span>
+    <span class="s0">private void </span><span class="s1">initGUI() {</span>
+        <span class="s1">init()</span><span class="s0">;</span>
+        <span class="s1">JMenuBar menuBar = </span><span class="s0">new </span><span class="s1">JMenuBar()</span><span class="s0">;</span>
+        <span class="s1">JMenu fileMenu = </span><span class="s0">new </span><span class="s1">JMenu(</span><span class="s2">&quot;File&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem openMenuItem = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;Load&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">openMenuItem.addActionListener(e -&gt; {</span>
+            <span class="s1">openMenuItemCall()</span><span class="s0">;</span>
+        <span class="s1">})</span><span class="s0">;</span>
+        <span class="s1">fileMenu.add(openMenuItem)</span><span class="s0">;</span>
+        <span class="s1">menuBar.add(fileMenu)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem createTeamMenuItem = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;Create Team&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">createTeamMenuItem.addActionListener(e -&gt; {</span>
+            <span class="s1">createTeamMenuItemCall()</span><span class="s0">;</span>
+        <span class="s1">})</span><span class="s0">;</span>
+        <span class="s1">menuBar.add(createTeamMenuItem)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem startDraftMenuItem = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;Start Draft&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">startDraftMenuItem.addActionListener(e -&gt; {</span>
+            <span class="s1">initGuiDraft()</span><span class="s0">;</span>
+        <span class="s1">})</span><span class="s0">;</span>
+        <span class="s1">menuBar.add(startDraftMenuItem)</span><span class="s0">;</span>
+        <span class="s1">setJMenuBar(menuBar)</span><span class="s0">;</span>
+        <span class="s1">panel()</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// MODIFIES: this</span>
+    <span class="s3">// EFFECTS: creates the panel in the beginning that displays the teams playing</span>
+    <span class="s0">private void </span><span class="s1">panel() {</span>
+        <span class="s1">JPanel draftPanel = </span><span class="s0">new </span><span class="s1">JPanel(</span><span class="s0">new </span><span class="s1">BorderLayout())</span><span class="s0">;</span>
+        <span class="s1">draftPanel.setBorder(BorderFactory.createTitledBorder(</span><span class="s2">&quot;League&quot;</span><span class="s1">))</span><span class="s0">;</span>
+        <span class="s1">teamTable = </span><span class="s0">new </span><span class="s1">JTable()</span><span class="s0">;</span>
+        <span class="s1">JScrollPane teamTableScrollPane = </span><span class="s0">new </span><span class="s1">JScrollPane(teamTable)</span><span class="s0">;</span>
+        <span class="s1">draftPanel.add(teamTableScrollPane</span><span class="s0">, </span><span class="s1">BorderLayout.CENTER)</span><span class="s0">;</span>
+
+        <span class="s1">add(draftPanel)</span><span class="s0">;</span>
+
+    <span class="s1">}</span>
+
+    <span class="s3">// MODIFES: this</span>
+    <span class="s3">// EFFECTS: loads the last saved league</span>
+    <span class="s0">private void </span><span class="s1">openMenuItemCall() {</span>
+        <span class="s1">loadLeagueGUI()</span><span class="s0">;</span>
+        <span class="s1">updateTeamTable()</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// MODIFIES: this</span>
+    <span class="s3">// EFFECTS: creates the add team feature and adds it to the team table</span>
+    <span class="s0">private void </span><span class="s1">createTeamMenuItemCall() {</span>
+        <span class="s1">String teamName = JOptionPane.showInputDialog(</span><span class="s0">this, </span><span class="s2">&quot;Enter the name of the new team:&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JOptionPane.showMessageDialog(</span><span class="s0">this, </span><span class="s2">&quot;Team &quot; </span><span class="s1">+ teamName + </span><span class="s2">&quot; has entered the league!&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">createTeam(teamName)</span><span class="s0">;</span>
+        <span class="s1">updateTeamTable()</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// MODIFIES: this</span>
+    <span class="s3">// EFFECTS: initializes the scanner and changes the Delimiter to a newline character</span>
+    <span class="s0">private void </span><span class="s1">init() {</span>
+        <span class="s1">jsonWriter = </span><span class="s0">new </span><span class="s1">JsonWriter(JSON_STORE)</span><span class="s0">;</span>
+        <span class="s1">jsonReader = </span><span class="s0">new </span><span class="s1">JsonReader(JSON_STORE)</span><span class="s0">;</span>
+        <span class="s1">setTitle(</span><span class="s2">&quot;NBA Fantasy Draft Simulator&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">setSize(</span><span class="s4">800</span><span class="s0">, </span><span class="s4">600</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">setDefaultCloseOperation(EXIT_ON_CLOSE)</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// MODIFIES: this</span>
+    <span class="s3">// EFFECTS: creates an object of type Team based on user's input</span>
+    <span class="s0">private void </span><span class="s1">createTeam(String name) {</span>
+        <span class="s1">Team team = </span><span class="s0">new </span><span class="s1">Team(name)</span><span class="s0">;</span>
+        <span class="s1">league.getLeague().add(team)</span><span class="s0">;</span>
+        <span class="s0">int </span><span class="s1">draftNo = team.getPosition()</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+
+    <span class="s3">// MODIFIES: this</span>
+    <span class="s3">// EFFECTS: goes through all the teams and updates them in the following team table</span>
+    <span class="s0">private void </span><span class="s1">updateTeamTable() {</span>
+        <span class="s1">DefaultTableModel tableModel = </span><span class="s0">new </span><span class="s1">DefaultTableModel()</span><span class="s0">;</span>
+        <span class="s1">tableModel.addColumn(</span><span class="s2">&quot;Teams:&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s0">for </span><span class="s1">(Team team : league.getLeague()) {</span>
+            <span class="s1">Object[] rowData = </span><span class="s0">new </span><span class="s1">Object[]{team.getTeamName()}</span><span class="s0">;</span>
+            <span class="s1">tableModel.addRow(rowData)</span><span class="s0">;</span>
+        <span class="s1">}</span>
+        <span class="s1">teamTable.setModel(tableModel)</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+
+    <span class="s3">// EFFECTS: creates the main display after the draft is started</span>
+    <span class="s0">private void </span><span class="s1">initGuiDraft() {</span>
+        <span class="s1">setJMenuBar(</span><span class="s0">null</span><span class="s1">)</span><span class="s0">;</span>
+
+        <span class="s1">JMenuBar newMenuBar = </span><span class="s0">new </span><span class="s1">JMenuBar()</span><span class="s0">;</span>
+        <span class="s1">JMenu fileMenu = </span><span class="s0">new </span><span class="s1">JMenu(</span><span class="s2">&quot;File&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem saveMenuItem = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;Save&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">saveMenuItem.addActionListener(e -&gt; {</span>
+            <span class="s1">saveLeagueGUI()</span><span class="s0">;</span>
+        <span class="s1">})</span><span class="s0">;</span>
+        <span class="s1">fileMenu.add(saveMenuItem)</span><span class="s0">;</span>
+        <span class="s1">newMenuBar.add(fileMenu)</span><span class="s0">;</span>
+        <span class="s1">newMenuBar.add(filterMenu())</span><span class="s0">;</span>
+        <span class="s1">JMenu viewMenu = </span><span class="s0">new </span><span class="s1">JMenu(</span><span class="s2">&quot;View&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem currentTeam = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;Current Teams&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem viewPlayerStats = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;View Player&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">viewMenu.add(currentTeam)</span><span class="s0">;</span>
+        <span class="s1">viewMenu.add(viewPlayerStats)</span><span class="s0">;</span>
+        <span class="s1">newMenuBar.add(viewMenu)</span><span class="s0">;</span>
+        <span class="s1">setJMenuBar(newMenuBar)</span><span class="s0">;</span>
+        <span class="s1">JPanel draftPanel = </span><span class="s0">new </span><span class="s1">JPanel(</span><span class="s0">new </span><span class="s1">BorderLayout())</span><span class="s0">;</span>
+        <span class="s1">draftPanel.setBorder(BorderFactory.createTitledBorder(</span><span class="s2">&quot;Current Available Players&quot;</span><span class="s1">))</span><span class="s0">;</span>
+        <span class="s1">add(draftPanel)</span><span class="s0">;</span>
+        <span class="s1">setContentPane(draftPanel)</span><span class="s0">;</span>
+        <span class="s1">revalidate()</span><span class="s0">;</span>
+        <span class="s1">showDraftBoard()</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+
+    <span class="s3">// EFFECTS: creates the menu after pressing the filter option</span>
+    <span class="s0">private </span><span class="s1">JMenu filterMenu() {</span>
+        <span class="s1">JMenu filterMenu = </span><span class="s0">new </span><span class="s1">JMenu(</span><span class="s2">&quot;Filter&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem filterMenuPoints = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;Points&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem filterMenuFG = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;FG%&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem filterMenuFT = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;FT%&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem filterMenu3PT = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;3PT&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem filterMenuRebounds = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;Rebounds&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem filterMenuAssists = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;Assists&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem filterMenuSteals = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;Steals&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem filterMenuBlocks = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;Blocks&quot;</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">JMenuItem filterMenuTurnovers = </span><span class="s0">new </span><span class="s1">JMenuItem(</span><span class="s2">&quot;Turnovers&quot;</span><span class="s1">)</span><span class="s0">;</span>
+
+        <span class="s1">filterMenuPoints.addActionListener(e -&gt; {</span>
+            <span class="s1">filterPoints()</span><span class="s0">;</span>
+        <span class="s1">})</span><span class="s0">;</span>
+
+        <span class="s1">filterMenu.add(filterMenuPoints)</span><span class="s0">;</span>
+        <span class="s1">filterMenu.add(filterMenuFG)</span><span class="s0">;</span>
+        <span class="s1">filterMenu.add(filterMenuFT)</span><span class="s0">;</span>
+        <span class="s1">filterMenu.add(filterMenu3PT)</span><span class="s0">;</span>
+        <span class="s1">filterMenu.add(filterMenuRebounds)</span><span class="s0">;</span>
+        <span class="s1">filterMenu.add(filterMenuAssists)</span><span class="s0">;</span>
+        <span class="s1">filterMenu.add(filterMenuSteals)</span><span class="s0">;</span>
+        <span class="s1">filterMenu.add(filterMenuBlocks)</span><span class="s0">;</span>
+        <span class="s1">filterMenu.add(filterMenuTurnovers)</span><span class="s0">;</span>
+
+        <span class="s0">return </span><span class="s1">filterMenu</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+
+    <span class="s3">// MODIFIES: this</span>
+    <span class="s3">// EFFECTS: updates the draft pool based on the respective call to this method</span>
+    <span class="s0">private void </span><span class="s1">updateDraftPool() {</span>
+        <span class="s1">DefaultTableModel model = (DefaultTableModel) draftBoardTable.getModel()</span><span class="s0">;</span>
+        <span class="s1">model.setRowCount(</span><span class="s4">0</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s0">for </span><span class="s1">(Player player : pool.getPool()) {</span>
+            <span class="s1">String[] rowData = {player.getName()</span><span class="s0">, </span><span class="s1">player.getPosition()</span><span class="s0">, </span><span class="s1">String.valueOf(player.getPoints())</span><span class="s0">,</span>
+                    <span class="s1">String.valueOf(player.getFg())</span><span class="s0">, </span><span class="s1">String.valueOf(player.getFt())</span><span class="s0">, </span><span class="s1">String.valueOf(player.getThrees())</span><span class="s0">,</span>
+                    <span class="s1">String.valueOf(player.getRebounds())</span><span class="s0">, </span><span class="s1">String.valueOf(player.getAssists())</span><span class="s0">, </span><span class="s1">String.valueOf(player</span>
+                    <span class="s1">.getSteals())</span><span class="s0">, </span><span class="s1">String.valueOf(player.getBlocks())</span><span class="s0">, </span><span class="s1">String.valueOf(player.getTurnovers())}</span><span class="s0">;</span>
+            <span class="s1">model.addRow(rowData)</span><span class="s0">;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+
+    <span class="s3">// EFFECTS: creates the display for the draft pool</span>
+    <span class="s0">private void </span><span class="s1">showDraftBoard() {</span>
+        <span class="s1">JPanel draftPanel = </span><span class="s0">new </span><span class="s1">JPanel(</span><span class="s0">new </span><span class="s1">BorderLayout())</span><span class="s0">;</span>
+        <span class="s1">JPanel draftBoardPanel = </span><span class="s0">new </span><span class="s1">JPanel(</span><span class="s0">new </span><span class="s1">BorderLayout())</span><span class="s0">;</span>
+        <span class="s1">draftBoardPanel.setBorder(BorderFactory.createTitledBorder(</span><span class="s2">&quot;Draft Pool&quot;</span><span class="s1">))</span><span class="s0">;</span>
+        <span class="s1">currentTeamLabel = </span><span class="s0">new </span><span class="s1">JLabel(</span><span class="s2">&quot;Current team: &quot; </span><span class="s1">+ league.getLeague().get(currentTeamIndex).getTeamName())</span><span class="s0">;</span>
+        <span class="s1">draftBoardPanel.add(currentTeamLabel</span><span class="s0">, </span><span class="s1">BorderLayout.SOUTH)</span><span class="s0">;</span>
+        <span class="s1">String[] columnNames = {</span><span class="s2">&quot;Name&quot;</span><span class="s0">, </span><span class="s2">&quot;Position&quot;</span><span class="s0">, </span><span class="s2">&quot;Points&quot;</span><span class="s0">, </span><span class="s2">&quot;FG%&quot;</span><span class="s0">, </span><span class="s2">&quot;FT%&quot;</span><span class="s0">, </span><span class="s2">&quot;3PT&quot;</span><span class="s0">, </span><span class="s2">&quot;Rebounds&quot;</span><span class="s0">, </span><span class="s2">&quot;Assists&quot;</span><span class="s0">, </span><span class="s2">&quot;Steals&quot;</span><span class="s0">,</span>
+                <span class="s2">&quot;Blocks&quot;</span><span class="s0">, </span><span class="s2">&quot;Turnovers&quot;</span><span class="s1">}</span><span class="s0">;</span>
+        <span class="s1">DefaultTableModel draftBoardModel = </span><span class="s0">new </span><span class="s1">DefaultTableModel(columnNames</span><span class="s0">, </span><span class="s4">0</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">draftBoardTable = </span><span class="s0">new </span><span class="s1">JTable(draftBoardModel)</span><span class="s0">;</span>
+        <span class="s1">draftBoardTableTwo()</span><span class="s0">;</span>
+        <span class="s1">JScrollPane scrollPane = </span><span class="s0">new </span><span class="s1">JScrollPane(draftBoardTable)</span><span class="s0">;</span>
+        <span class="s1">draftBoardPanel.add(scrollPane</span><span class="s0">, </span><span class="s1">BorderLayout.CENTER)</span><span class="s0">;</span>
+        <span class="s1">draftPanel.add(draftBoardPanel</span><span class="s0">, </span><span class="s1">BorderLayout.CENTER)</span><span class="s0">;</span>
+        <span class="s1">draftPlayerUI()</span><span class="s0">;</span>
+        <span class="s1">JPanel teamRosterPanel = </span><span class="s0">new </span><span class="s1">JPanel(</span><span class="s0">new </span><span class="s1">BorderLayout())</span><span class="s0">;</span>
+        <span class="s1">teamRosterPanel.setBorder(BorderFactory.createTitledBorder(</span><span class="s2">&quot;Teams&quot;</span><span class="s1">))</span><span class="s0">;</span>
+        <span class="s1">String[] teamRosterColumnNames = {</span><span class="s2">&quot;Team&quot;</span><span class="s0">, </span><span class="s2">&quot;Player&quot;</span><span class="s1">}</span><span class="s0">;</span>
+        <span class="s1">DefaultTableModel teamRosterModel = </span><span class="s0">new </span><span class="s1">DefaultTableModel(teamRosterColumnNames</span><span class="s0">, </span><span class="s4">0</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">teamRosterTable = </span><span class="s0">new </span><span class="s1">JTable(teamRosterModel)</span><span class="s0">;</span>
+        <span class="s1">JScrollPane teamRosterScrollPane = </span><span class="s0">new </span><span class="s1">JScrollPane(teamRosterTable)</span><span class="s0">;</span>
+        <span class="s1">teamRosterPanel.add(teamRosterScrollPane</span><span class="s0">, </span><span class="s1">BorderLayout.CENTER)</span><span class="s0">;</span>
+        <span class="s1">draftPanel.add(teamRosterPanel</span><span class="s0">, </span><span class="s1">BorderLayout.SOUTH)</span><span class="s0">;</span>
+        <span class="s1">showDraftBoardTwo(draftPanel)</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// EFFECTS: assists with instantiating the draftboard</span>
+    <span class="s0">private void </span><span class="s1">draftBoardTableTwo() {</span>
+        <span class="s1">draftBoardTable.setDefaultEditor(Object.</span><span class="s0">class, null</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">draftBoardTable.getColumnModel().getColumn(</span><span class="s4">0</span><span class="s1">).setCellEditor(</span><span class="s0">null</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">draftBoardTable.getColumnModel().getColumn(</span><span class="s4">1</span><span class="s1">).setCellEditor(</span><span class="s0">null</span><span class="s1">)</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// MODDIFIES: this</span>
+    <span class="s3">// EFFECTS: assists with instantiating the display of the draftboard</span>
+    <span class="s0">private void </span><span class="s1">showDraftBoardTwo(JPanel draftPanel) {</span>
+        <span class="s1">updateDraftPool()</span><span class="s0">;</span>
+        <span class="s1">updateTeamRoster()</span><span class="s0">;</span>
+
+        <span class="s1">setContentPane(draftPanel)</span><span class="s0">;</span>
+        <span class="s1">revalidate()</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// EFFECTS: modifies each team in the league based on the respective call</span>
+    <span class="s0">private void </span><span class="s1">updateTeamRoster() {</span>
+        <span class="s1">DefaultTableModel model = (DefaultTableModel) teamRosterTable.getModel()</span><span class="s0">;</span>
+        <span class="s1">model.setRowCount(</span><span class="s4">0</span><span class="s1">)</span><span class="s0">;</span>
+
+        <span class="s0">for </span><span class="s1">(Team team : league.getLeague()) {</span>
+            <span class="s1">String teamName = team.getTeamName()</span><span class="s0">;</span>
+            <span class="s0">for </span><span class="s1">(Player player : team.getRoster()) {</span>
+                <span class="s1">String[] rowData = {teamName</span><span class="s0">, </span><span class="s1">player.getName()}</span><span class="s0">;</span>
+                <span class="s1">model.addRow(rowData)</span><span class="s0">;</span>
+            <span class="s1">}</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// EFFECTS: allows users to conduct the draft option through double-clicking and having the respective players</span>
+    <span class="s3">// image return</span>
+    <span class="s0">private void </span><span class="s1">draftPlayerUI() {</span>
+        <span class="s1">draftBoardTable.addMouseListener(</span><span class="s0">new </span><span class="s1">MouseAdapter() {</span>
+            <span class="s0">public void </span><span class="s1">mouseClicked(MouseEvent e) {</span>
+                <span class="s0">if </span><span class="s1">(e.getClickCount() == </span><span class="s4">2</span><span class="s1">) {</span>
+                    <span class="s0">try </span><span class="s1">{</span>
+                        <span class="s0">int </span><span class="s1">selectedRow = draftBoardTable.getSelectedRow()</span><span class="s0">;</span>
+                        <span class="s1">Player selectedPlayer = pool.getPool().get(selectedRow)</span><span class="s0">;</span>
+                        <span class="s1">URL imageURL = </span><span class="s0">new </span><span class="s1">URL(selectedPlayer.getPicture())</span><span class="s0">;</span>
+                        <span class="s1">ImageIcon playerIcon = </span><span class="s0">new </span><span class="s1">ImageIcon(ImageIO.read(imageURL))</span><span class="s0">;</span>
+                        <span class="s1">ImageIcon scaledIcon = </span><span class="s0">new </span><span class="s1">ImageIcon(convertImage(playerIcon))</span><span class="s0">;</span>
+                        <span class="s1">JPanel panel = </span><span class="s0">new </span><span class="s1">JPanel()</span><span class="s0">;</span>
+                        <span class="s1">panel.add(</span><span class="s0">new </span><span class="s1">JLabel(</span><span class="s2">&quot;Are you sure you want to draft &quot; </span><span class="s1">+ selectedPlayer.getName() + </span><span class="s2">&quot;?&quot;</span><span class="s1">))</span><span class="s0">;</span>
+                        <span class="s1">panel.add(</span><span class="s0">new </span><span class="s1">JLabel(scaledIcon))</span><span class="s0">;</span>
+                        <span class="s0">int </span><span class="s1">option = JOptionPane.showConfirmDialog(</span><span class="s0">null, </span><span class="s1">panel</span><span class="s0">, </span><span class="s2">&quot;Draft Player&quot;</span><span class="s0">,</span>
+                                <span class="s1">JOptionPane.YES_NO_OPTION</span><span class="s0">, </span><span class="s1">JOptionPane.PLAIN_MESSAGE)</span><span class="s0">;</span>
+                        <span class="s0">if </span><span class="s1">(option == JOptionPane.YES_OPTION) {</span>
+                            <span class="s1">optionYes(selectedPlayer)</span><span class="s0">;</span>
+                        <span class="s1">}</span>
+                    <span class="s1">} </span><span class="s0">catch </span><span class="s1">(Exception f) {</span>
+                        <span class="s1">System.out.println(</span><span class="s2">&quot;Exception was caught, An Error Occured&quot;</span><span class="s1">)</span><span class="s0">;</span>
+                    <span class="s1">}</span>
+                <span class="s1">}</span>
+            <span class="s1">}</span>
+        <span class="s1">})</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// REQUIRES: playerIcon is not null</span>
+    <span class="s3">// MODIFIES: playerIcon</span>
+    <span class="s3">// EFFECTS: converts the image into a smaller size</span>
+    <span class="s0">private </span><span class="s1">Image convertImage(ImageIcon playerIcon) {</span>
+        <span class="s1">Image image = playerIcon.getImage()</span><span class="s0">;</span>
+        <span class="s0">return </span><span class="s1">image.getScaledInstance(</span><span class="s4">135</span><span class="s0">, </span><span class="s4">100</span><span class="s0">, </span><span class="s1">Image.SCALE_SMOOTH)</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// REQUIRES: selectedPlayer is not null</span>
+    <span class="s3">// MODIFIES: this</span>
+    <span class="s3">// EFFECTS: drafts the player to the respective team and adjusts the draft pool</span>
+    <span class="s0">private void </span><span class="s1">optionYes(Player selectedPlayer) {</span>
+        <span class="s1">Team currentTeam = league.getLeague().get(currentTeamIndex)</span><span class="s0">;</span>
+        <span class="s1">currentTeam.draftPlayer(selectedPlayer.getName())</span><span class="s0">;</span>
+        <span class="s1">updateTeamRoster()</span><span class="s0">;</span>
+        <span class="s1">updateDraftPool()</span><span class="s0">;</span>
+        <span class="s1">currentTeamIndex++</span><span class="s0">;</span>
+        <span class="s0">if </span><span class="s1">(currentTeamIndex &gt;= league.getLeague().size()) {</span>
+            <span class="s1">currentTeamIndex = </span><span class="s4">0</span><span class="s0">;</span>
+        <span class="s1">}</span>
+        <span class="s1">currentTeamLabel.setText(</span><span class="s2">&quot;Current team: &quot; </span><span class="s1">+ league.getLeague()</span>
+                <span class="s1">.get(currentTeamIndex).getTeamName())</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// EFFECTS: saves the league to file</span>
+    <span class="s0">private void </span><span class="s1">saveLeagueGUI() {</span>
+        <span class="s0">try </span><span class="s1">{</span>
+            <span class="s1">jsonWriter.open()</span><span class="s0">;</span>
+            <span class="s1">jsonWriter.write(league)</span><span class="s0">;</span>
+            <span class="s1">jsonWriter.close()</span><span class="s0">;</span>
+            <span class="s1">JOptionPane.showMessageDialog(</span><span class="s0">this, </span><span class="s2">&quot;Saved &quot; </span><span class="s1">+ league.getLeagueName() + </span><span class="s2">&quot; to &quot;</span>
+                    <span class="s1">+ JSON_STORE)</span><span class="s0">;</span>
+        <span class="s1">} </span><span class="s0">catch </span><span class="s1">(FileNotFoundException e) {</span>
+            <span class="s1">JOptionPane.showMessageDialog(</span><span class="s0">this, </span><span class="s2">&quot;Unable to write to file: &quot; </span><span class="s1">+ JSON_STORE)</span><span class="s0">;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// MODIFIES: this</span>
+    <span class="s3">// EFFECTS: loads league from file</span>
+    <span class="s0">private void </span><span class="s1">loadLeagueGUI() {</span>
+        <span class="s0">try </span><span class="s1">{</span>
+            <span class="s1">league = jsonReader.read()</span><span class="s0">;</span>
+            <span class="s1">JOptionPane.showMessageDialog(</span><span class="s0">this, </span><span class="s2">&quot;Loaded &quot; </span><span class="s1">+ league.getLeagueName() + </span><span class="s2">&quot; &quot;</span>
+                    <span class="s1">+ </span><span class="s2">&quot;from &quot; </span><span class="s1">+ JSON_STORE)</span><span class="s0">;</span>
+        <span class="s1">} </span><span class="s0">catch </span><span class="s1">(IOException f) {</span>
+            <span class="s1">JOptionPane.showMessageDialog(</span><span class="s0">this, </span><span class="s2">&quot;Unable to read from file: &quot; </span><span class="s1">+ JSON_STORE)</span><span class="s0">;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+    <span class="s3">// EFFECTS: conducts the filter process based on points</span>
+    <span class="s0">private void </span><span class="s1">filterPoints() {</span>
+        <span class="s1">ArrayList&lt;Player&gt; fgPool = </span><span class="s0">new </span><span class="s1">ArrayList&lt;&gt;(</span><span class="s0">this</span><span class="s1">.pool.getPool().stream()</span>
+                <span class="s1">.sorted(Comparator.comparingDouble(Player::getPoints).reversed())</span>
+                <span class="s1">.collect(Collectors.toList()))</span><span class="s0">;</span>
+        <span class="s0">this</span><span class="s1">.pool.getPool().clear()</span><span class="s0">;</span>
+        <span class="s0">this</span><span class="s1">.pool.getPool().addAll(fgPool)</span><span class="s0">;</span>
+        <span class="s1">updateDraftPool()</span><span class="s0">;</span>
+        <span class="s1">JOptionPane.showMessageDialog(</span><span class="s0">this, </span><span class="s2">&quot;Filtered by Points in descending order&quot;</span><span class="s1">)</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+<span class="s1">}</span>
+</pre>
+</body>
+</html>
