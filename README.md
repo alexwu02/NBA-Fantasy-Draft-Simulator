@@ -3,8 +3,6 @@
 **Program Features:**
 - Allows you to simulate a draft based on different draft pick positions 
 - Provide overall statistical analysis of your team in regard to NBA stats 
-- (Possibly) Implement a features to recommend players based on what stats your 
-team is missing 
 
 The program will allow you to do a mock draft for your NBA fantasy league. You will be able to preview your teams current stats aswell as apply
 filters to whoevers available to draft. Anyone who is interested in planning for their upcoming NBA fantasy draft or wants to use this simulator 
